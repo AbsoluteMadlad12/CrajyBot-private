@@ -17,9 +17,9 @@ from utils import timezone
 class MetricsAlpha(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        db = self.bot.mongo["bot-data"]
-        self.bot.metrics_collection = db["metrics"]    # will return in UTC
+        self.bot.metrics_collection = db["metrics_testing"]    # will return in UTC
         self.metrics_collection = self.bot.metrics_collection.with_options(codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.BOT_TZ))
+        # use self.metrics_collection in all querying
 
         self.loaded_time = datetime.datetime.now(tz=timezone.BOT_TZ)
         self.last_stored_time = None
@@ -95,6 +95,7 @@ class MetricsAlpha(commands.Cog):
 
     @tasks.loop(hours=24)
     async def metrics_clear(self):
+        # a loop to clear out old data. details needs to be discussed.
         pass
 
 def setup(bot):
