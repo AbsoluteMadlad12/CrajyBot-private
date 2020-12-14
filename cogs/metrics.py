@@ -92,6 +92,7 @@ class Metrics(commands.Cog):
 
     @tasks.loop(hours=24)
     async def metrics_clear(self):
+        # to clear out old data from the database
         pass
 
 def setup(bot):
