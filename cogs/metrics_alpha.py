@@ -18,9 +18,13 @@ class MetricsAlpha(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         db = self.bot.mongo["bot-data"]
-        self.bot.metrics_collection = db["metrics"]    # will return in UTC
-        self.metrics_collection = self.bot.metrics_collection.with_options(codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.BOT_TZ))
+        self.bot.test_metrics_collection = db["testing_metrics"]    # remember to switch with actual metrics collection when branch is merged.
+        self.metrics_collection = self.bot.test_metrics_collection.with_options(codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.BOT_TZ))
 
+        # copying data from real metrics collection
+        data = await self.bot.metrics_collection.find().to_list(length=None)
+        await self.metrics_collection.insert_many(data)
+        
         self.loaded_time = datetime.datetime.now(tz=timezone.BOT_TZ)
         self.last_stored_time = None
 
@@ -101,8 +105,9 @@ def setup(bot):
     bot.add_cog(Metrics(bot))
 
 # add a teardown function that will message when the cog gets unloaded.
-
-        
+def teardown(bot):
+    await bot.test_metrics_collection.delete_many({})      # clears the test metrics collection
+    # this is done as it is filled with copied data from the actual metrics collection everytime it is loaded   
 
         
 
