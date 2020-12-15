@@ -31,7 +31,7 @@ class InstantaneousMetrics:
         return self.channel_counts[channel]
 
     @staticmethod
-    def get_counts_for(type_: str, object_: str, time_unit: str, *data: Sequence["InstantaneousMetrics"]) -> Mapping[str, Mapping]:
+    def get_counts_for(type_: str, object_: str, time_unit: str, data: Sequence["InstantaneousMetrics"]) -> Mapping[str, Mapping]:
         # get the individual user/channel's metrics from a given time period of InstantaneousMetrics
         # the `type` arg is used to specify which type of discord object we are looking for: channel or member
         # the `time_unit` arg is used to specify if the graph needs times in hours, or days
