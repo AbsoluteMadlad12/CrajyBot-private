@@ -17,6 +17,7 @@ from utils import timezone
 class MetricsAlpha(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
         db = self.bot.mongo["bot-data"]
         self.bot.test_metrics_collection = db["testing_metrics"]    # remember to switch with actual metrics collection when branch is merged.
         self.metrics_collection = self.bot.test_metrics_collection.with_options(codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.BOT_TZ))
@@ -41,7 +42,7 @@ class MetricsAlpha(commands.Cog):
         self.cached_message_count += 1
 
     @commands.has_guild_permissions(administrator=True)
-    @commands.command(name="start-metrics")
+    @commands.command(name="start-metrics_")
     async def start_metrics(self, ctx):
         self.metrics_dump.start()
         await ctx.message.add_reaction("✅")
@@ -50,7 +51,7 @@ class MetricsAlpha(commands.Cog):
             return await ctx.send(embed=embed)
 
     @commands.has_guild_permissions(administrator=True)
-    @commands.command(name="stop-metrics")
+    @commands.command(name="stop-metrics_")
     async def stop_metrics(self, ctx):
         self.metrics_dump.stop()
 
@@ -65,14 +66,15 @@ class MetricsAlpha(commands.Cog):
         embed = discord.Embed(title="Metrics Tracking: Stopped", description=f"Time: {self.last_stored_time}", color=discord.Color.red())
         return await ctx.send(embed=embed)
     
-    @commands.group(name="metrics", aliases=["stats", "statistics"], invoke_without_command=True)
+    @commands.group(name="metrics_", aliases=["stats", "statistics"], invoke_without_command=True)
     async def metrics(self, ctx):
         embed = discord.Embed(title="Metrics", 
                               description=f"Been tracking since: {self.loaded_time.strftime('%H:%M, %d %B, %Y')}\nLast data dump: {self.last_stored_time.strftime('%H:%M')}", 
                               color=discord.Color.green())
         return await ctx.send(embed=embed)
-
-    @metrics.command(name="hours", aliases=["h", "hour", "hourly"])
+    
+    # no need of a subcommand? just `metrics <time arg>`. need to think of ways to extend for per-person/per-channel stats though.
+    @metrics.command(name="hours_", aliases=["h", "hour", "hourly"])
     async def metrics_hours(self, ctx, amt: int=None):
         if amt is not None:
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=amt)
@@ -99,6 +101,7 @@ class MetricsAlpha(commands.Cog):
 
     @tasks.loop(hours=24)
     async def metrics_clear(self):
+        # a loop to clear out old data. details needs to be discussed.
         pass
 
 def setup(bot):
