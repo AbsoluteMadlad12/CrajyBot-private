@@ -21,10 +21,6 @@ class MetricsAlpha(commands.Cog):
         db = self.bot.mongo["bot-data"]
         self.bot.test_metrics_collection = db["testing_metrics"]    # remember to switch with actual metrics collection when branch is merged.
         self.metrics_collection = self.bot.test_metrics_collection.with_options(codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.BOT_TZ))
-
-        # copying data from real metrics collection
-        data = await self.bot.metrics_collection.find().to_list(length=None)
-        await self.metrics_collection.insert_many(data)
         
         self.loaded_time = datetime.datetime.now(tz=timezone.BOT_TZ)
         self.last_stored_time = None
@@ -44,6 +40,10 @@ class MetricsAlpha(commands.Cog):
     @commands.has_guild_permissions(administrator=True)
     @commands.command(name="start-metrics_")
     async def start_metrics(self, ctx):
+            # copying data from real metrics collection
+        data = await self.bot.metrics_collection.find().to_list(length=None)
+        await self.metrics_collection.insert_many(data)
+
         self.metrics_dump.start()
         await ctx.message.add_reaction("✅")
         with suppress(AttributeError):
@@ -53,7 +53,7 @@ class MetricsAlpha(commands.Cog):
     @commands.has_guild_permissions(administrator=True)
     @commands.command(name="stop-metrics_")
     async def stop_metrics(self, ctx):
-        self.metrics_dump.stop()
+        '''self.metrics_dump.stop()
 
         if len(self.author_cache) != 0 or len(self.channel_cache) != 0:
             self.last_stored_time = datetime.datetime.now(tz=timezone.BOT_TZ)
@@ -64,7 +64,9 @@ class MetricsAlpha(commands.Cog):
             self.cached_message_count = 0
         
         embed = discord.Embed(title="Metrics Tracking: Stopped", description=f"Time: {self.last_stored_time}", color=discord.Color.red())
-        return await ctx.send(embed=embed)
+        return await ctx.send(embed=embed)'''
+        # only clears test metric collection
+        await self.bot.test_metrics_collection.delete_many({}) 
     
     @commands.group(name="metrics_", aliases=["stats", "statistics"], invoke_without_command=True)
     async def metrics(self, ctx):
@@ -73,7 +75,6 @@ class MetricsAlpha(commands.Cog):
                               color=discord.Color.green())
         return await ctx.send(embed=embed)
     
-    # no need of a subcommand? just `metrics <time arg>`. need to think of ways to extend for per-person/per-channel stats though.
     @metrics.command(name="hours_", aliases=["h", "hour", "hourly"])
     async def metrics_hours(self, ctx, amt: int=None):
         if amt is not None:
@@ -106,13 +107,3 @@ class MetricsAlpha(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Metrics(bot))
-
-# add a teardown function that will message when the cog gets unloaded.
-def teardown(bot):
-    await bot.test_metrics_collection.delete_many({})      # clears the test metrics collection
-    # this is done as it is filled with copied data from the actual metrics collection everytime it is loaded   
-
-        
-
-
-

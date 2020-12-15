@@ -6,7 +6,7 @@ import numpy as np
 
 import datetime
 import io
-from typing import Sequence
+from typing import Sequence, Mapping, Union
 from dataclasses import dataclass
 from collections import namedtuple
 
@@ -30,11 +30,23 @@ class InstantaneousMetrics:
     def get_channel_count(self, channel: str) -> int:
         return self.channel_counts[channel]
 
+    @staticmethod
+    def get_counts_for(type_: str, object_: str, time_unit: str, *data: Sequence["InstantaneousMetrics"]) -> Mapping[str, Mapping]:
+        # get the individual user/channel's metrics from a given time period of InstantaneousMetrics
+        # the `type` arg is used to specify which type of discord object we are looking for: channel or member
+        # the `time_unit` arg is used to specify if the graph needs times in hours, or days
+        channel_or_member = {"channel": lambda i: i.get_channel_count(object_), "member": lambda j: j.get_personal_count(object_)}
+        hours_or_days = {"hours": lambda i: i.clean_hours_repr(), "days": lambda j: j.clean_date_repr()}
+        y = np.array([channel_or_member[type_.lower()](i) for i in data])
+        x = np.array([hours_or_days[time_unit.lower()](i) for i in data])
+        return {object_: {"x": x, "y": y}}
+
     def clean_hours_repr(self) -> str:
         return self.time.strftime("%H")    # returns in 00 format
 
     def clean_date_repr(self) -> str:
-        return self.time.strftime("%d/%m/%Y")
+        return self.time.strftime("%d/%m/")
+
 
 ImageEmbed = namedtuple("ImageEmbed", "file embed")
 
@@ -49,11 +61,11 @@ def graph_hourly_message_count(data: Sequence[InstantaneousMetrics]) -> ImageEmb
     x_array = np.array([x.clean_hours_repr() for x in data])
     y_array = np.array([y.total_count() for y in data])
     # prepare bytes buffer using _make_graph function
-    buffer = _make_graph("Total messages sent, hourly", xlabel="Time", ylabel="Messages", x_axis=x_array, y_axis=y_array)
+    buffer = _make_single_line_graph("Total messages sent, hourly", xlabel="Time", ylabel="Messages", x_axis=x_array, y_axis=y_array)
     return make_discord_embed(buffer)
 
 
-def _make_graph(title: str, *, xlabel: str, ylabel: str ,x_axis: np.array, y_axis: np.array) -> io.BytesIO:
+def _make_single_line_graph(title: str, *, xlabel: str, ylabel: str, x_axis: np.array, y_axis: np.array) -> io.BytesIO:
     """A general graphing function that is called by all other functions."""
     fig = Figure()
     ax = fig.subplots()
@@ -69,6 +81,12 @@ def _make_graph(title: str, *, xlabel: str, ylabel: str ,x_axis: np.array, y_axi
     buffer.seek(0)
 
     return buffer
+
+
+def _make_multi_line_graph() -> io.BytesIO:
+    # implement similar to single_line_graph
+    pass
+
 
 def make_discord_embed(image_buffer: io.BytesIO) -> ImageEmbed:
     """Converts the BytesIO buffer into a discord.File object that can be sent to any channel."""
