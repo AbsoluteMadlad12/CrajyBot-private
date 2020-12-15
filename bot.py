@@ -49,7 +49,7 @@ bot.role_names_collection = db["role"]
 bot.__version__ = "2.0"
 
 @bot.event
-async def on_ready(): # sends this message when bot starts working in #bot-tests
+async def on_ready(): # sends this message when bot starts working 
     await bot.get_channel(BOT_ANNOUNCE_CHANNEL).send("Online!")
     print("Bot Running!")
 
@@ -153,7 +153,7 @@ async def birthdayloop_before():
     guild = bot.get_guild(GUILD_ID)
     wishchannel = guild.get_channel(GENERAL_CHAT)
 
-#loading cogs
+"""#loading cogs
 if DEFAULT_COGS == []:
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
@@ -161,7 +161,7 @@ if DEFAULT_COGS == []:
     bot.load_extension('jishaku')
 else:
     for cog in DEFAULT_COGS:
-        bot.load_extension(f'cogs.{cog}')
+        bot.load_extension(f'cogs.{cog}')"""
 
 birthday_loop.start()
 stock_price.start()
