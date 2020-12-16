@@ -68,7 +68,7 @@ class MetricsAlpha(commands.Cog):
         # only clears test metric collection
         await self.bot.test_metrics_collection.delete_many({}) 
     
-    @commands.group(name="metrics", invoke_without_command=True)   # add aliases back on merging branch
+    @commands.group(name="metrics_", invoke_without_command=True)   # add aliases back on merging branch
     async def metrics(self, ctx, amt: int=None):
         if amt is not None:
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=amt)
