@@ -106,4 +106,4 @@ class MetricsAlpha(commands.Cog):
         pass
 
 def setup(bot):
-    bot.add_cog(Metrics(bot))
+    bot.add_cog(MetricsAlpha(bot))
