@@ -69,23 +69,26 @@ class MetricsAlpha(commands.Cog):
         await self.bot.test_metrics_collection.delete_many({}) 
     
     @commands.group(name="metrics_", invoke_without_command=True)   # add aliases back on merging branch
-    async def metrics(self, ctx):
-        embed = discord.Embed(title="Metrics", 
-                              description=f"Been tracking since: {self.loaded_time.strftime('%H:%M, %d %B, %Y')}\nLast data dump: {self.last_stored_time.strftime('%H:%M')}", 
-                              color=discord.Color.green())
-        return await ctx.send(embed=embed)
-    
-    @metrics.command(name="hours_")
-    async def metrics_hours(self, ctx, amt: int=None):
+    async def metrics(self, ctx, amt: int=None):
         if amt is not None:
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=amt)
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
         else:
-            raw_data = await self.metrics_collection.find().to_list(length=amt)
+            hours, minutes = datetime.datetime.now(tz=timezone.BOT_TZ).hour, datetime.datetime.now(tz=timezone.BOT_TZ).minute
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=hours, minutes=minutes)
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
+
         parsed = list(map(graphing.parse_data, raw_data))
         async with ctx.channel.typing():
             file_, embed = graphing.graph_hourly_message_count(parsed)
             return await ctx.send(file=file_, embed=embed)
+
+    @metrics.command(name="status")
+    async def metrics_status(self, ctx):
+        embed = discord.Embed(title="Metrics",
+                              description=f"Been tracking since: {self.loaded_time.strftime('%H:%M, %d %B, %Y')}\nLast data dump: {self.last_stored_time.strftime('%H:%M')}",
+                              color=discord.Color.green())
+        return await ctx.send(embed=embed)
 
     @tasks.loop(hours=1)
     async def metrics_dump(self):

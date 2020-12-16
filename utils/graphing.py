@@ -61,7 +61,7 @@ def graph_hourly_message_count(data: Sequence[InstantaneousMetrics]) -> ImageEmb
     x_array = np.array([x.clean_hours_repr() for x in data])
     y_array = np.array([y.total_count() for y in data])
     # prepare bytes buffer using _make_graph function
-    buffer = _make_single_line_graph("Total messages sent, hourly", xlabel="Time", ylabel="Messages", x_axis=x_array, y_axis=y_array)
+    buffer = _make_single_line_graph(f"Total messages sent, hourly\n{data[0].time.year}/{data[0].time.month}/{data[0].time.day}", xlabel="Time", ylabel="Messages", x_axis=x_array, y_axis=y_array)
     return make_discord_embed(buffer)
 
 
