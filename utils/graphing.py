@@ -61,11 +61,11 @@ def graph_hourly_message_count(data: Sequence[InstantaneousMetrics]) -> ImageEmb
     x_array = np.array([x.clean_hours_repr() for x in data])
     y_array = np.array([y.total_count() for y in data])
     # prepare bytes buffer using _make_graph function
-    buffer = _make_single_line_graph(title=f"Total messages sent, hourly\n{data[0].time.year}/{data[0].time.month}/{data[0].time.day}", xlabel="Time", ylabel="Messages", x_axis=x_array, y_axis=y_array)
+    buffer = _make_single_line_graph("Total messages sent, hourly", date=f"{data[0].time.year}/{data[0].time.month}/{data[0].time.day}", xlabel="Time", ylabel="Messages", x_axis=x_array, y_axis=y_array)
     return make_discord_embed(buffer)
 
 
-def _make_single_line_graph(title: str, *, xlabel: str, ylabel: str, x_axis: np.array, y_axis: np.array) -> io.BytesIO:
+def _make_single_line_graph(title: str, *, date: str, xlabel: str, ylabel: str, x_axis: np.array, y_axis: np.array) -> io.BytesIO:
     """A general graphing function that is called by all other functions."""
     fig = Figure()
     ax = fig.subplots()
@@ -74,6 +74,7 @@ def _make_single_line_graph(title: str, *, xlabel: str, ylabel: str, x_axis: np.
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
+    ax.legend(date)
 
     # a bytes buffer to which the generated graph image will be stored, instead of saving every graph image.
     buffer = io.BytesIO()
