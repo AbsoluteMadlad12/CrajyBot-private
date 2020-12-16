@@ -83,7 +83,7 @@ class MetricsAlpha(commands.Cog):
             file_, embed = graphing.graph_hourly_message_count(parsed)
             return await ctx.send(file=file_, embed=embed)
 
-    @metrics.command(name="hours_")
+    @metrics.command(name="status")
     async def metrics_status(self, ctx):
         embed = discord.Embed(title="Metrics",
                               description=f"Been tracking since: {self.loaded_time.strftime('%H:%M, %d %B, %Y')}\nLast data dump: {self.last_stored_time.strftime('%H:%M')}",
