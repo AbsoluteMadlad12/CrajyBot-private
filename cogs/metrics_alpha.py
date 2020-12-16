@@ -68,14 +68,14 @@ class MetricsAlpha(commands.Cog):
         # only clears test metric collection
         await self.bot.test_metrics_collection.delete_many({}) 
     
-    @commands.group(name="metrics_", aliases=["stats", "statistics"], invoke_without_command=True)
+    @commands.group(name="metrics_", invoke_without_command=True)   # add aliases back on merging branch
     async def metrics(self, ctx):
         embed = discord.Embed(title="Metrics", 
                               description=f"Been tracking since: {self.loaded_time.strftime('%H:%M, %d %B, %Y')}\nLast data dump: {self.last_stored_time.strftime('%H:%M')}", 
                               color=discord.Color.green())
         return await ctx.send(embed=embed)
     
-    @metrics.command(name="hours_", aliases=["h", "hour", "hourly"])
+    @metrics.command(name="hours_")
     async def metrics_hours(self, ctx, amt: int=None):
         if amt is not None:
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=amt)
