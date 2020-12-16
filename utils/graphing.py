@@ -70,11 +70,11 @@ def _make_single_line_graph(title: str, *, date: str, xlabel: str, ylabel: str, 
     fig = Figure()
     ax = fig.subplots()
 
-    ax.plot(x_axis, y_axis)
+    ax.plot(x_axis, y_axis, label=date)
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    ax.legend(date)
+    ax.legend(loc="upper right")
 
     # a bytes buffer to which the generated graph image will be stored, instead of saving every graph image.
     buffer = io.BytesIO()
