@@ -96,6 +96,20 @@ class MetricsAlpha(commands.Cog):
             file_, embed = graphing.graph_hourly_total_message_count(parsed, users)
             return await ctx.send(file=file_, embed=embed)
 
+    @metrics.command(name="channel")
+    async def metrics_channel(self, ctx, channels: commands.Greedy[discord.TextChannel] = None, amt: str=None):
+        if amt is not None:
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
+        else:
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=datetime.datetime.now(tz=timezone.BOT_TZ).hour)
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
+
+        parsed = list(map(graphing.parse_data, raw_data))
+        async with ctx.channel.typing():
+            file_, embed = graphing.graph_hourly_total_message_count(parsed, channels)
+            return await ctx.send(file=file_, embed=embed)
+
     @metrics.command(name="status")
     async def metrics_status(self, ctx):
         embed = discord.Embed(title="Metrics",
