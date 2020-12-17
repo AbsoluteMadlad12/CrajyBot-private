@@ -2,11 +2,12 @@ import pytz
 from datetime import timedelta
 from collections import namedtuple
 
+
 BOT_TZ = pytz.timezone("Asia/Dubai")
 
 Timedelta = namedtuple("Timedelta", "delta unit")
 
-def get_timedelta(arg: str) -> Timedelta[timedelta, str]:
+def get_timedelta(arg: str) -> timedelta:
     """Converts a string of time for eg: 5h -> into an equivalent timedelta object. Returns a namedtuple with the timedelta and the unit as a string."""
     time_, unit = "", ""
     for i in arg:
