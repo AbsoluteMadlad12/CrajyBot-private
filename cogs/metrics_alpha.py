@@ -69,21 +69,24 @@ class MetricsAlpha(commands.Cog):
         await self.bot.test_metrics_collection.delete_many({}) 
     
     @commands.group(name="metrics_", invoke_without_command=True)   # add aliases back on merging branch
-    async def metrics(self, ctx, amt: int=None):
+    async def metrics(self, ctx, amt: str=None):
         if amt is not None:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")[0]
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
         else:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=datetime.datetime.now(tz=timezone.BOT_TZ).hour)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
 
         parsed = list(map(graphing.parse_data, raw_data))
+
+        axes = graphing.InstantaneousMetrics.get_counts_for(time_unit="hours", data=parsed)
+
         async with ctx.channel.typing():
-            file_, embed = graphing.graph_hourly_total_message_count(parsed)
+            file_, embed = graphing.graph_hourly_total_message_count(parsed, axes[None]['x'], [axes[None]['y']])
             return await ctx.send(file=file_, embed=embed)
 
     @metrics.command(name="user")
-    async def metrics_user(self, ctx, user: str=None, amt: int=None):
+    async def metrics_user(self, ctx, users: commands.Greedy[discord.Member] = None, amt: str=None):
         if amt is not None:
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
@@ -91,20 +94,46 @@ class MetricsAlpha(commands.Cog):
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=datetime.datetime.now(tz=timezone.BOT_TZ).hour)
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
 
-        if user is not None:
-            user_ids = []
-            users = user.split()
-            for i in users:
-                user_ids.append(discord.utils.get(ctx.guild.members, nick=i).id)
-        else:
-            user_ids = [i.id for i in ctx.guild.members]
-
         parsed = list(map(graphing.parse_data, raw_data))
+
+        x_axis = None
+        y_axis = []
+        for i in users:
+            user_id = str(i.id)
+            axes = graphing.InstantaneousMetrics.get_counts_for(type_="member", object_=user_id, time_unit="hours",
+                                                       data=parsed)
+            if x_axis is None:
+                axes[user_id]['x']
+            y_axis.append(axes[user_id]['y'])
+
         async with ctx.channel.typing():
-            file_, embed = graphing.graph_hourly_total_message_count(parsed, user_ids)
+            file_, embed = graphing.graph_hourly_total_message_count(parsed, x_axis, y_axis, [i.name for i in users])
             return await ctx.send(file=file_, embed=embed)
 
+    @metrics.command(name="channel")
+    async def metrics_channel(self, ctx, channels: commands.Greedy[discord.TextChannel] = None, amt: str=None):
+        if amt is not None:
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
+        else:
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=datetime.datetime.now(tz=timezone.BOT_TZ).hour)
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
 
+        parsed = list(map(graphing.parse_data, raw_data))
+
+        x_axis = None
+        y_axis = []
+        for i in channels:
+            channel_id = str(i.id)
+            axes = graphing.InstantaneousMetrics.get_counts_for(type_="channel", object_=channel_id, time_unit="hours",
+                                                                data=parsed)
+            if x_axis is None:
+                axes[channel_id]['x']
+            y_axis.append(axes[channel_id]['y'])
+
+        async with ctx.channel.typing():
+            file_, embed = graphing.graph_hourly_total_message_count(parsed, x_axis, y_axis, [i.name for i in channels])
+            return await ctx.send(file=file_, embed=embed)
 
     @metrics.command(name="status")
     async def metrics_status(self, ctx):
