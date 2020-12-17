@@ -120,14 +120,14 @@ def parse_data(db_response: dict) -> InstantaneousMetrics:
 
 def graph_hourly_total_message_count(data: Sequence[InstantaneousMetrics], users: list = None,
                                      channels: list = None) -> ImageEmbed:
-    # data for x and y axes
-    x_array, y_arrays = _get_plotting_data(data, users, channels)
-    # prepare bytes buffer using _make_graph function
     try:
-        print(data[0])
-        buffer = _make_single_line_graph("Total messages sent, hourly",
-                                         date=f"{data[0].time.day}/{data[0].time.month}/{data[0].time.year}",
-                                         xlabel="Time", ylabel="Messages", x_axis=x_array, y_axis=y_arrays)
+        # data for x and y axes
+        x_array, y_arrays, labels = _get_plotting_data(data, users, channels)
+
+        # prepare bytes buffer using _make_graph function
+        buffer = _make_single_line_graph(f"Total messages sent on {data[0].clean_date_repr()}",
+                                         labels=labels, xlabel="Time (hours)", ylabel="Messages", x_axis=x_array,
+                                         y_axis=y_arrays)
         return make_discord_embed(buffer)
     except IndexError:
         embed = discord.Embed(title="Metrics", description="There is no data saved for the day yet")
@@ -136,28 +136,44 @@ def graph_hourly_total_message_count(data: Sequence[InstantaneousMetrics], users
 
 def _get_plotting_data(data, users, channels):
     if users is None and channels is None:
-        x_array = np.array([x.clean_hours_repr() for x in data])
-        y_arrays = [np.array([y.total_count() for y in data])]
-        return x_array, y_arrays
+        axes = InstantaneousMetrics.get_counts_for(time_unit="hours", data=data)
+        return axes[None]['x'], [axes[None]['y']], None
     elif users is not None and channels is None:
-        x_array = np.array([x.clean_hours_repr() for x in data])
-        y_arrays = [np.array([y.get_personal_count(i) for y in data]) for i in users]
-        return x_array, y_arrays
+        x_axis = None
+        y_axes = []
+        for i in users:
+            user_id = str(i.id)
+            axes = InstantaneousMetrics.get_counts_for(type_="member", object_=user_id, time_unit="hours",
+                                                       data=data)
+            if x_axis is None:
+                axes[user_id]['x']
+            y_axes.append(axes[user_id]['y'])
+        return x_axis, y_axes, [i.name for i in users]
+
     elif users is None and channels is not None:
-        x_array = np.array([x.clean_hours_repr() for x in data])
-        y_arrays = [np.array([y.get_channel_count(i) for y in data]) for i in channels]
-        return x_array, y_arrays
+        x_axis = None
+        y_axes = []
+        for i in channels:
+            channel_id = str(i.id)
+            axes = InstantaneousMetrics.get_counts_for(type_="channel", object_=channel_id,
+                                                       time_unit="hours", data=data)
+            if x_axis is None:
+                axes[channel_id]['x']
+            y_axes.append(axes[channel_id]['y'])
+        return x_axis, y_axes, [i.name for i in channels]
 
 
-
-def _make_single_line_graph(title: str, *, date: str, xlabel: str, ylabel: str, x_axis: np.array,
+def _make_single_line_graph(title: str, *, labels: list, xlabel: str, ylabel: str, x_axis: np.array,
                             y_axis: [np.array]) -> io.BytesIO:
     """A general graphing function that is called by all other functions."""
     fig = Figure()
     ax = fig.subplots()
 
-    for i in y_axis:
-        ax.plot(x_axis, i, label=date)
+    if labels is not None:
+        for i in range(len(y_axis)):
+            ax.plot(x_axis, y_axis[i], label=labels[i])
+    else:
+        ax.plot(x_axis, y_axis[0])
 
     ax.set_title(title)
     ax.set_xlabel(xlabel)
