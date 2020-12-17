@@ -183,7 +183,3 @@ def make_discord_embed(image_buffer: io.BytesIO) -> ImageEmbed:
     embed = discord.Embed()
     embed.set_image(url="attachment://buffer.png")
     return ImageEmbed(file_for_discord, embed)
-
-
-if __name__ == "__main__":
-    for i in range(17):
