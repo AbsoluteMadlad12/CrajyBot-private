@@ -47,44 +47,46 @@ class Metrics(commands.Cog):
     async def stop_metrics(self, ctx):
         self.metrics_dump.stop()
 
-        if len(self.author_cache) != 0 or len(self.channel_cache) != 0:
-            self.last_stored_time = datetime.datetime.now(tz=timezone.BOT_TZ)
-            insert_doc = {"datetime": self.last_stored_time, "author_counts": self.author_cache, "channel_counts": self.channel_cache}
-            await self.metrics_collection.insert_one(insert_doc)
-            self.author_cache = defaultdict(lambda: 0)
-            self.channel_cache = defaultdict(lambda: 0)
-            self.cached_message_count = 0
+        self.last_stored_time = datetime.datetime.now(tz=timezone.BOT_TZ)
+        insert_doc = {"datetime": self.last_stored_time, "author_counts": self.author_cache, "channel_counts": self.channel_cache}
+        await self.metrics_collection.insert_one(insert_doc)
+        self.author_cache = defaultdict(lambda: 0)
+        self.channel_cache = defaultdict(lambda: 0)
+        self.cached_message_count = 0
         
         embed = discord.Embed(title="Metrics Tracking: Stopped", description=f"Time: {self.last_stored_time}", color=discord.Color.red())
         return await ctx.send(embed=embed)
     
     @commands.group(name="metrics", aliases=["stats", "statistics"], invoke_without_command=True)
-    async def metrics(self, ctx):
-        embed = discord.Embed(title="Metrics", 
-                              description=f"Been tracking since: {self.loaded_time.strftime('%H:%M, %d %B, %Y')}\nLast data dump: {self.last_stored_time.strftime('%H:%M')}", 
-                              color=discord.Color.green())
-        return await ctx.send(embed=embed)
-
-    @metrics.command(name="hours", aliases=["h", "hour", "hourly"])
-    async def metrics_hours(self, ctx, amt: int=None):
+    async def metrics(self, ctx, amt: int = None):
         if amt is not None:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=amt)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(str(amt))
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
         else:
-            raw_data = await self.metrics_collection.find().to_list(length=amt)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(
+                hours=str(datetime.datetime.now(tz=timezone.BOT_TZ).hour))
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
+
         parsed = list(map(graphing.parse_data, raw_data))
         async with ctx.channel.typing():
             file_, embed = graphing.graph_hourly_message_count(parsed)
             return await ctx.send(file=file_, embed=embed)
+
+    @metrics.command(name="status")
+    async def metrics_status(self, ctx):
+        embed = discord.Embed(title="Metrics",
+                              description=f"Been tracking since: {self.loaded_time.strftime('%H:%M, %d %B, %Y')}\nLast data dump: {self.last_stored_time.strftime('%H:%M')}",
+                              color=discord.Color.green())
+        return await ctx.send(embed=embed)
 
     @tasks.loop(hours=1)
     async def metrics_dump(self):
         # add new data hourly to the db and then reset counts and cache
         self.last_stored_time = datetime.datetime.now(tz=timezone.BOT_TZ)
 
-        if len(self.author_cache) != 0 or len(self.channel_cache) != 0:
-            insert_doc = {"datetime": self.last_stored_time, "author_counts": self.author_cache, "channel_counts": self.channel_cache}
-            await self.metrics_collection.insert_one(insert_doc)
+
+        insert_doc = {"datetime": self.last_stored_time, "author_counts": self.author_cache, "channel_counts": self.channel_cache}
+        await self.metrics_collection.insert_one(insert_doc)
 
         self.author_cache = defaultdict(lambda: 0)
         self.channel_cache = defaultdict(lambda: 0)

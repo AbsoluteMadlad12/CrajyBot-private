@@ -71,17 +71,40 @@ class MetricsAlpha(commands.Cog):
     @commands.group(name="metrics_", invoke_without_command=True)   # add aliases back on merging branch
     async def metrics(self, ctx, amt: int=None):
         if amt is not None:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=amt)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
         else:
-            hours, minutes = datetime.datetime.now(tz=timezone.BOT_TZ).hour, datetime.datetime.now(tz=timezone.BOT_TZ).minute
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=hours, minutes=minutes)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=datetime.datetime.now(tz=timezone.BOT_TZ).hour)
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
 
         parsed = list(map(graphing.parse_data, raw_data))
         async with ctx.channel.typing():
-            file_, embed = graphing.graph_hourly_message_count(parsed)
+            file_, embed = graphing.graph_hourly_total_message_count(parsed)
             return await ctx.send(file=file_, embed=embed)
+
+    @metrics.command(name="user")
+    async def metrics_user(self, ctx, user: str=None, amt: int=None):
+        if amt is not None:
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
+        else:
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=datetime.datetime.now(tz=timezone.BOT_TZ).hour)
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=amt)
+
+        if user is not None:
+            user_ids = []
+            users = user.split()
+            for i in users:
+                user_ids.append(discord.utils.get(ctx.guild.members, nick=i).id)
+        else:
+            user_ids = [i.id for i in ctx.guild.members]
+
+        parsed = list(map(graphing.parse_data, raw_data))
+        async with ctx.channel.typing():
+            file_, embed = graphing.graph_hourly_total_message_count(parsed, user_ids)
+            return await ctx.send(file=file_, embed=embed)
+
+
 
     @metrics.command(name="status")
     async def metrics_status(self, ctx):
