@@ -125,7 +125,7 @@ def parse_data(db_response: dict) -> InstantaneousMetrics:
 
 
 def graph_data(*, data: Sequence[InstantaneousMetrics], x_axis: np.array,
-                                     y_axis: Union[Sequence[np.array], np.array], title: str, x_label: str, y_label: str, labels: Sequence[str] = None) -> ImageEmbed:
+                                     y_axis: Union[Sequence[np.array], np.array], title: str, x_label: str = "Time", y_label: str = "Messages", labels: Sequence[str] = None) -> ImageEmbed:
     # A wrapper function that is used in the cog, which calls the underlying functions.
     buffer = _make_line_graph(title, labels=labels, xlabel=x_label, ylabel=y_label, x_axis=x_axis, y_axis=y_axis)
     return make_discord_embed(buffer)
