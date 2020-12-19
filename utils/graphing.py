@@ -120,18 +120,18 @@ def parse_data(db_response: dict) -> InstantaneousMetrics:
 
 def graph_hourly_total_message_count(data: Sequence[InstantaneousMetrics], x_axis: np.array,
                                      y_axis: [np.array], labels: [str] = None) -> ImageEmbed:
-    try:
-        # data for x and y axes
-        x_array, y_arrays, labels = x_axis, y_axis, labels
 
-        # prepare bytes buffer using _make_graph function
-        buffer = _make_single_line_graph(f"Total messages sent on {data[0].clean_date_repr()}",
+    # data for x and y axes
+    x_array, y_arrays, labels = x_axis, y_axis, labels
+
+    # prepare bytes buffer using _make_graph function
+    buffer = _make_single_line_graph(f"Total messages sent on {data[0].clean_date_repr()}",
                                          labels=labels, xlabel="Time (hours)", ylabel="Messages", x_axis=x_array,
                                          y_axis=y_arrays)
-        return make_discord_embed(buffer)
-    except IndexError:
-        embed = discord.Embed(title="Metrics", description="There is no data saved for the day yet")
-        return None, embed
+    return make_discord_embed(buffer)
+
+        #embed = discord.Embed(title="Metrics", description="There is no data saved for the day yet")
+        #return None, embed
 
 
 def _make_single_line_graph(title: str, *, labels: list, xlabel: str, ylabel: str, x_axis: np.array,
