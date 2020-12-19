@@ -42,8 +42,8 @@ class InstantaneousMetrics:
                 current_group.append(prev)
                 continue
             else:
-                date = f"{i.year}{i.month}{i.day}"
-                prev_date = f"{prev.year}{prev.month}{prev.day}"
+                date = datetime.date(year=i.time.year, month=i.time.month, day=i.time.day)
+                prev_date = datetime.date(year=prev.time.year, month=prev.time.month, day=prev.time.day)
                 if date == prev_date:
                     current_group.append(i)
                 else:
