@@ -71,21 +71,19 @@ class MetricsAlpha(commands.Cog):
     @commands.group(name="metrics_", invoke_without_command=True)   # add aliases back on merging branch
     async def metrics(self, ctx, amt: str=None):
         if amt is not None:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")[0]
+            td, unit = timezone.get_timedelta(amt)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - td
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
-            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=None)
+            unit = "hours"
+            raw_data = await self.metrics_collection.find().to_list(length=None)
 
         parsed = list(map(graphing.parse_data, raw_data))
 
         axes = graphing.InstantaneousMetrics.get_counts_for(time_unit="hours", data=parsed)
-        await ctx.send(axes)
-        await ctx.send(axes[None]['x'][0])
-        await ctx.send(axes[None]['y'][0])
 
         async with ctx.channel.typing():
-            file_, embed = graphing.graph_hourly_total_message_count(parsed, axes[None]['x'], [axes[None]['y']])
+            file_, embed = graphing.graph_data(data=parsed, x_axis=axes[None]['x'], y_axis=[axes[None]['y']], title=f"Total message count for the server ({unit})")
             return await ctx.send(file=file_, embed=embed)
 
     @metrics.command(name="user")
@@ -110,7 +108,7 @@ class MetricsAlpha(commands.Cog):
             y_axis.append(axes[user_id]['y'])
 
         async with ctx.channel.typing():
-            file_, embed = graphing.graph_hourly_total_message_count(parsed, x_axis, y_axis, [i.name for i in users])
+            file_, embed = graphing.graph_data(data=parsed, x_axis=x_axis, y_axis=y_axis, title=f"Message count per user ({unit})", labels=[i.name for i in users])
             return await ctx.send(file=file_, embed=embed)
 
     @metrics.command(name="channel")
@@ -122,6 +120,9 @@ class MetricsAlpha(commands.Cog):
         else:
             unit = "hours"
             raw_data = await self.metrics_collection.find().to_list(length=None)
+            
+        if channels is None:
+            channels = [ctx.channel]
 
         parsed = list(map(graphing.parse_data, raw_data))
 
@@ -136,7 +137,7 @@ class MetricsAlpha(commands.Cog):
             y_axis.append(axes[channel_id]['y'])
 
         async with ctx.channel.typing():
-            file_, embed = graphing.graph_hourly_total_message_count(parsed, x_axis, y_axis, [i.name for i in channels])
+            file_, embed = graphing.graph_data(data=parsed, x_axis=x_axis, y_axis=y_axis, title=f"Message count per channel ({unit})", labels=[i.name for i in channels])
             return await ctx.send(file=file_, embed=embed)
 
     @metrics.command(name="status")
