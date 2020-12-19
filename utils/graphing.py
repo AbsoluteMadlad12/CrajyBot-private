@@ -97,11 +97,11 @@ class InstantaneousMetrics:
             
         channel_or_member = {"channel": lambda i: i.get_channel_count(object_), "member": lambda j: j.get_personal_count(object_), "total": lambda k: k.total_counts()}
         hours_or_days = {"hours": lambda i: i.clean_hours_repr(), "days": lambda j: j.clean_date_repr()}
-        if type_ == "hours":
+        if time_unit == "hours":
             x = np.array([hours_or_days[time_unit.lower()](i) for i in data])
             y = np.array([channel_or_member[type_.lower()](i) for i in data])
         else:
-            # type_ is days, need to group together all data for a day, and then sum it. This is done by the group_by_date and get_day_counts functions.
+            # time unit is days, need to group together all data for a day, and then sum it. This is done by the group_by_date and get_day_counts functions.
             # x axis only needs one date for each day
             grouped = InstantaneousMetrics.group_by_date(data)
             x = np.array([group[0].clean_date_repr() for group in grouped])
