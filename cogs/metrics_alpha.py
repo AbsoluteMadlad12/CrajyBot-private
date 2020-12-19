@@ -81,6 +81,8 @@ class MetricsAlpha(commands.Cog):
 
         axes = graphing.InstantaneousMetrics.get_counts_for(time_unit="hours", data=parsed)
         await ctx.send(axes)
+        await ctx.send(axes[None]['x'])
+        await ctx.send(axes[None]['y'])
 
         async with ctx.channel.typing():
             file_, embed = graphing.graph_hourly_total_message_count(parsed, axes[None]['x'], [axes[None]['y']])
