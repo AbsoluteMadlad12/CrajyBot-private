@@ -125,7 +125,7 @@ def graph_hourly_total_message_count(data: Sequence[InstantaneousMetrics], x_axi
     x_array, y_arrays, labels = x_axis, y_axis, labels
 
     # prepare bytes buffer using _make_graph function
-    buffer = _make_single_line_graph(f"Total messages sent on {data[0].clean_date_repr()}",
+    buffer = _make_single_line_graph(f"Total messages sent today",
                                          labels=labels, xlabel="Time (hours)", ylabel="Messages", x_axis=x_array,
                                          y_axis=y_arrays)
     return make_discord_embed(buffer)
