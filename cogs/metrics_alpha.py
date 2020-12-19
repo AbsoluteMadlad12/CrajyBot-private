@@ -91,22 +91,22 @@ class MetricsAlpha(commands.Cog):
     @metrics.command(name="user")
     async def metrics_user(self, ctx, users: commands.Greedy[discord.Member] = None, amt: str=None):
         if amt is not None:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")[0]
+            td, unit = timezone.get_timedelta(amt)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - td
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
-            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=None)
+            unit = "hours"      # if no time arg is provided, graph will be displayed in hours (for now, testing)
+            raw_data = await self.metrics_collection.find().to_list(length=None)
 
         parsed = list(map(graphing.parse_data, raw_data))
-        await ctx.send(parsed)
         x_axis = None
         y_axis = []
         for i in users:
             user_id = str(i.id)
-            axes = graphing.InstantaneousMetrics.get_counts_for(type_="member", object_=user_id, time_unit="hours",
+            axes = graphing.InstantaneousMetrics.get_counts_for(type_="member", object_=user_id, time_unit=unit,
                                                        data=parsed)
             if x_axis is None:
-                axes[user_id]['x']
+                x_axis = axes[user_id]['x']
             y_axis.append(axes[user_id]['y'])
 
         async with ctx.channel.typing():
@@ -116,11 +116,12 @@ class MetricsAlpha(commands.Cog):
     @metrics.command(name="channel")
     async def metrics_channel(self, ctx, channels: commands.Greedy[discord.TextChannel] = None, amt: str=None):
         if amt is not None:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")[0]
+            td, unit = timezone.get_timedelta(amt)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - td
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
-            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=None)
+            unit = "hours"
+            raw_data = await self.metrics_collection.find().to_list(length=None)
 
         parsed = list(map(graphing.parse_data, raw_data))
 
@@ -128,10 +129,10 @@ class MetricsAlpha(commands.Cog):
         y_axis = []
         for i in channels:
             channel_id = str(i.id)
-            axes = graphing.InstantaneousMetrics.get_counts_for(type_="channel", object_=channel_id, time_unit="hours",
+            axes = graphing.InstantaneousMetrics.get_counts_for(type_="channel", object_=channel_id, time_unit=unit,
                                                                 data=parsed)
             if x_axis is None:
-                axes[channel_id]['x']
+                x_axis = axes[channel_id]['x']
             y_axis.append(axes[channel_id]['y'])
 
         async with ctx.channel.typing():
