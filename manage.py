@@ -1,6 +1,6 @@
 from utils.menu import Menu
 from secret.TOKEN import TOKEN
-
+import os
 def setup() -> None:
     guild_id = int(input("Enter your Guild ID:"))
     announce_channel = int(input("Enter channel ID where the bot is allowed to announce things:"))
@@ -46,7 +46,7 @@ def debug():
     print("If you want to load multiple cogs, enter their names separated by spaces. For example; `amongus economy`.")
     func = lambda x: f"cogs.{x}"
     cogs = list(map(func, input().split()))
-    from bot import bot 
+    from bot import bot
     from secret.constants import BOT_TEST_CHANNEL
 
     @bot.event
