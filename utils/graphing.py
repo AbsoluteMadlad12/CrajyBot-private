@@ -120,28 +120,22 @@ ImageEmbed = namedtuple("ImageEmbed", "file embed")
 
 def parse_data(db_response: dict) -> InstantaneousMetrics:
     """Convert the mongodb response dictionary into the dataclass instance.
-    The dictionary is in the form `{datetime: <time inserted>, author_counts: <dict containing message count for each user>, channel_counts: >dict containing message counts for each channel>}`."""
+    The dictionary is in the form `{datetime: <time inserted>, author_counts: <dict containing message count for each user>, channel_counts: <dict containing message counts for each channel>}`."""
     return InstantaneousMetrics(time=db_response["datetime"], author_counts=db_response["author_counts"], channel_counts=db_response["channel_counts"])
 
 
-def graph_hourly_total_message_count(data: Sequence[InstantaneousMetrics], x_axis: np.array,
-                                     y_axis: [np.array], labels: [str] = None) -> ImageEmbed:
-
-    # data for x and y axes
-    x_array, y_arrays, labels = x_axis, y_axis, labels
-
-    # prepare bytes buffer using _make_graph function
-    buffer = _make_single_line_graph(f"Total messages sent today",
-                                         labels=labels, xlabel="Time (hours)", ylabel="Messages", x_axis=x_array,
-                                         y_axis=y_arrays)
+def graph_data(*, data: Sequence[InstantaneousMetrics], x_axis: np.array,
+                                     y_axis: Union[Sequence[np.array], np.array], title: str, x_label: str, y_label: str, labels: Sequence[str] = None) -> ImageEmbed:
+    # A wrapper function that is used in the cog, which calls the underlying functions.
+    buffer = _make_line_graph(title, labels=labels, xlabel=x_label, ylabel=y_label, x_axis=x_axis, y_axis=y_axis)
     return make_discord_embed(buffer)
 
         #embed = discord.Embed(title="Metrics", description="There is no data saved for the day yet")
         #return None, embed
 
 
-def _make_single_line_graph(title: str, *, labels: list, xlabel: str, ylabel: str, x_axis: np.array,
-                            y_axis: [np.array]) -> io.BytesIO:
+def _make_line_graph(title: str, *, labels: list, xlabel: str, ylabel: str, x_axis: np.array,
+                            y_axis: Union[Sequence[np.array], np.array]) -> io.BytesIO:
     """A general graphing function that is called by all other functions."""
     fig = Figure()
     ax = fig.subplots()
@@ -159,15 +153,10 @@ def _make_single_line_graph(title: str, *, labels: list, xlabel: str, ylabel: st
 
     # a bytes buffer to which the generated graph image will be stored, instead of saving every graph image.
     buffer = io.BytesIO()
-    fig.savefig(buffer, format="png", bbox_inchex="tight")     # saves file with name <date>-<first plotted hour>-<last plotted hour>
+    fig.savefig(buffer, format="png", bbox_inchex="tight")   
     buffer.seek(0)
 
     return buffer
-
-
-def _make_multi_line_graph() -> io.BytesIO:
-    # implement similar to single_line_graph
-    pass
 
 
 def make_discord_embed(image_buffer: io.BytesIO) -> ImageEmbed:
