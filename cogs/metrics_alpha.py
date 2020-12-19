@@ -75,12 +75,12 @@ class MetricsAlpha(commands.Cog):
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - td
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
-            unit = "hours"
+            unit = "days"
             raw_data = await self.metrics_collection.find().to_list(length=None)
 
         parsed = list(map(graphing.parse_data, raw_data))
 
-        axes = graphing.InstantaneousMetrics.get_counts_for(time_unit="hours", data=parsed)
+        axes = graphing.InstantaneousMetrics.get_counts_for(time_unit=unit, data=parsed)
 
         async with ctx.channel.typing():
             file_, embed = graphing.graph_data(data=parsed, x_axis=axes[None]['x'], y_axis=[axes[None]['y']], title=f"Total message count for the server ({unit})")
