@@ -88,10 +88,10 @@ class MetricsAlpha(commands.Cog):
     @metrics.command(name="user")
     async def metrics_user(self, ctx, users: commands.Greedy[discord.Member] = None, amt: str=None):
         if amt is not None:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")[0]
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=datetime.datetime.now(tz=timezone.BOT_TZ).hour)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
 
         parsed = list(map(graphing.parse_data, raw_data))
@@ -113,10 +113,10 @@ class MetricsAlpha(commands.Cog):
     @metrics.command(name="channel")
     async def metrics_channel(self, ctx, channels: commands.Greedy[discord.TextChannel] = None, amt: str=None):
         if amt is not None:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{amt}")[0]
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
-            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - datetime.timedelta(hours=datetime.datetime.now(tz=timezone.BOT_TZ).hour)
+            delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
 
         parsed = list(map(graphing.parse_data, raw_data))
