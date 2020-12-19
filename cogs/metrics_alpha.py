@@ -75,7 +75,7 @@ class MetricsAlpha(commands.Cog):
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
-            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=None)
 
         parsed = list(map(graphing.parse_data, raw_data))
 
@@ -92,7 +92,7 @@ class MetricsAlpha(commands.Cog):
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
-            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=None)
 
         parsed = list(map(graphing.parse_data, raw_data))
 
@@ -117,7 +117,7 @@ class MetricsAlpha(commands.Cog):
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
         else:
             delta = datetime.datetime.now(tz=timezone.BOT_TZ) - timezone.get_timedelta(f"{datetime.datetime.now(tz=timezone.BOT_TZ).hour}h")[0]
-            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=int(amt[:-1]))
+            raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=None)
 
         parsed = list(map(graphing.parse_data, raw_data))
 
