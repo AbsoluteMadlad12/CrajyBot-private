@@ -33,8 +33,8 @@ class InstantaneousMetrics:
     def get_channel_count(self, channel: str) -> int:
         try:
             return self.channel_counts[channel]
-       except KeyError:
-        return 0
+        except KeyError:
+            return 0
 
     @staticmethod
     def group_by_date(data: Sequence["InstantaneousMetrics"]) -> Sequence[Sequence["InstantaneousMetrics"]]:
