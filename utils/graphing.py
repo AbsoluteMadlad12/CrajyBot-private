@@ -25,10 +25,16 @@ class InstantaneousMetrics:
 
     def get_personal_count(self, person: str) -> int:
         # the expected ID is a string, because they're stored as strings in the database. MongoDB doesn't support integer keys.
-        return self.author_counts[person]
+        try:
+            return self.author_counts[person]
+        except KeyError:
+            return 0                # for those hours in which the user didn't send any message
 
     def get_channel_count(self, channel: str) -> int:
-        return self.channel_counts[channel]
+        try:
+            return self.channel_counts[channel]
+       except KeyError:
+        return 0
 
     @staticmethod
     def group_by_date(data: Sequence["InstantaneousMetrics"]) -> Sequence[Sequence["InstantaneousMetrics"]]:
