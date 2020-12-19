@@ -20,7 +20,7 @@ class MetricsAlpha(commands.Cog):
 
         db = self.bot.mongo["bot-data"]
         self.bot.test_metrics_collection = db["testing_metrics"]    # remember to switch with actual metrics collection when branch is merged.
-        self.metrics_collection = self.bot.test_metrics_collection.with_options(codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.BOT_TZ))
+        self.metrics_collection = self.bot.metrics_collection.with_options(codec_options=CodecOptions(tz_aware=True, tzinfo=timezone.BOT_TZ))
         
         self.loaded_time = datetime.datetime.now(tz=timezone.BOT_TZ)
         self.last_stored_time = None
