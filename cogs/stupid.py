@@ -4,7 +4,7 @@ from discord.ext import commands, tasks
 import disputils
 
 from pymongo import ASCENDING
-from aiohttp import ClientSession
+import json
 
 from typing import Optional, Union
 import random
@@ -16,10 +16,11 @@ from contextlib import suppress
 import itertools
 
 from secret.constants import GUILD_ID, ROLE_NAME
-from secret.KEY import *      
+from secret.KEY import *  
+from secret.TOKEN import *    
 
 try:
-    from secret.webhooks import BOTSPAM_HOOK, ANOTHERCHAT_HOOK
+    from secret.webhooks import BOTSPAM_HOOK, ANOTHERCHAT_HOOK, SLASH_COMMANDS_URL
 except:
     pass
 
@@ -42,6 +43,8 @@ class stupid(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        self.pin_cache = set()
+        self.pin_vote_threshold = 4
         # a loop that changes the name of a role, based on names saved in the database. Names are added with the `role-name` command
         self.role_name_loop.start()   
         self.qotd_cache_loop.start()
@@ -53,6 +56,20 @@ class stupid(commands.Cog):
             pass
 
         self.cached_qotd = None
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if str(reaction) == "📌" and user != self.bot.user:
+            if reaction.message in self.pin_cache:
+                if reaction.count == self.pin_vote_threshold:
+                    mod = self.bot.get_cog("Moderator")
+                    ctx = await self.bot.get_context(reaction.message)
+                    setattr(ctx, "author", self.bot.user)
+                    self.pin_cache.remove(reaction.message)
+                    await reaction.message.clear_reactions()
+                    return await mod.pin(ctx, id_=reaction.message)
+            else:
+                self.pin_cache.add(reaction.message)
         
     @commands.command(name="fancy", aliases=["f"])
     async def fancy(self, ctx, *, message):
@@ -181,6 +198,48 @@ class stupid(commands.Cog):
             await id_.add_reaction(i)
         await ctx.message.delete()
 
+    @wat.command(name="slash-add", aliases=["-sa"])
+    async def wat_slash_add(self, ctx, key: str, value: str):
+        with open("utils/slash_commands.json", "r") as f:
+            existing = json.load(f)
+
+        if len(existing["commands"]) >= 50:
+            raise Exception("There are already 50 /wat commands. Remove one of them before adding more.")
+
+        update_function = {"name": key, "value": key}
+        existing["commands"].append(update_function)
+
+        update_data = {key: value}
+
+        json = {
+            "name": "wat",
+            "description": "Some of the best .wat commands, but now they look sick.",
+            "options": [
+                {
+                    "name": "use",
+                    "description": "Which tag to bring.",
+                    "type": 3,
+                    "required": True,
+                    "choices": existing["commands"]
+                },
+            ]
+        }
+        headers = {"Authorization": f"Bot {TOKEN}"}
+        with open("utils/slash_commands.json", "w") as f:
+            json.dump(existing, f)
+
+        guild_url = f"https://discord.com/api/v8/applications/{APPLICATION_ID}/guilds/{GUILD_ID}/commands"
+
+        # update the command in the application
+        async with ctx.channel.typing():
+            async with self.bot.session.post(guild_url, json=json, headers=headers) as resp:
+                await ctx.send(await resp.text())
+            async with self.bot.session.post(SLASH_COMMANDS_URL, json=json) as resp:
+                if resp.status == 200:
+                    return await ctx.send(f"**{key}** added!")
+                else:
+                    return await ctx.send("Internal error occurred.")
+    
     @commands.command(name="emojify", aliases=['e'])
     async def emojify(self, ctx, *, message):
         emojis = {'a':'🇦', 'b': '🇧', 'c':'🇨', 'd':'🇩', 'e':'🇪', 'f': '🇫', 'g': '🇬', 'h':'🇭', 'i': '🇮', 'j':'🇯', 'k':'🇰', 'l':'🇱', 'm':'🇲', 'n':'🇳', 'o':'🇴', 'p':'🇵', 'q':'🇶', 'r':'🇷', 's':'🇸', 't':'🇹', 'u':'🇺', 'v':'🇻', 'w':'🇼', 'x':'🇽', 'y':'🇾', 'z':'🇿'}
@@ -237,6 +296,12 @@ class stupid(commands.Cog):
 
         paginator = disputils.BotEmbedPaginator(ctx, embeds)
         await paginator.run()
+
+    @commands.has_guild_permissions(administrator=True)
+    @commands.command(name="change-vote-threshold")
+    async def change_vote_threshold(self, ctx, arg: int):
+        self.pin_vote_threshold = arg
+        await ctx.message.add_reaction("✅")
 
     @commands.command(name="fetch-pin", aliases=["fetchpin"], help="Return a pin based on the ID provided. WIP.")
     async def fetch_pin(self, ctx, identifier: Union[str, int]):

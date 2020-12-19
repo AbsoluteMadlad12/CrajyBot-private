@@ -5,7 +5,7 @@ import random
 import datetime
 
 import discord
-from discord.ext import commands, tasks, menus
+from discord.ext import commands, tasks
 
 import asyncio
 from aiohttp import ClientSession
