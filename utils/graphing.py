@@ -113,7 +113,7 @@ class InstantaneousMetrics:
         return self.time.strftime("%H")    # returns in 00 format
 
     def clean_date_repr(self) -> str:
-        return self.time.strftime("%d/%m/")
+        return self.time.strftime("%d/%m")
 
 
 ImageEmbed = namedtuple("ImageEmbed", "file embed")
