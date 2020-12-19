@@ -98,7 +98,7 @@ class MetricsAlpha(commands.Cog):
             raw_data = await self.metrics_collection.find({"datetime": {"$gte": delta}}).to_list(length=None)
 
         parsed = list(map(graphing.parse_data, raw_data))
-
+        await ctx.send(parsed)
         x_axis = None
         y_axis = []
         for i in users:
